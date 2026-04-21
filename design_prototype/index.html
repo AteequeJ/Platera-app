@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platera - AI Chef's Table</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <div class="bg-layer" id="bg-texture"></div>
+        
+        <!-- Home Screen -->
+        <section id="home-screen" class="screen active">
+            <header class="dynamic-header">
+                <h1 class="greeting">Let's craft something <span class="gradient-text">extraordinary</span>.</h1>
+                <p class="subtitle">Your digital pantry is ready.</p>
+            </header>
+
+            <div class="ingredient-cloud-container">
+                <div id="ingredient-cloud" class="ingredient-cloud">
+                    <!-- Bubbles will be injected here -->
+                </div>
+            </div>
+
+            <button id="generate-btn" class="fab">
+                Generate Dishes <span class="sparkle">✨</span>
+            </button>
+        </section>
+
+        <!-- Suggestions Screen -->
+        <section id="suggestions-screen" class="screen">
+            <div class="scroll-container">
+                <header class="screen-header">
+                    <h2>Suggestions</h2>
+                    <p>Based on your available ingredients</p>
+                </header>
+
+                <div class="suggestion-group">
+                    <h3 class="section-title">Ready to Cook</h3>
+                    <div class="dish-cards-container" id="ready-to-cook">
+                        <!-- Ready dishes -->
+                    </div>
+                </div>
+
+                <div class="suggestion-group almost-group">
+                    <h3 class="section-title">Almost There</h3>
+                    <p class="section-subtitle">Missing 1-2 ingredients</p>
+                    <div class="dish-cards-container" id="almost-there">
+                        <!-- Almost dishes -->
+                    </div>
+                </div>
+            </div>
+            <button class="back-btn" onclick="navigateTo('home-screen')">←</button>
+        </section>
+
+        <!-- Detail Screen -->
+        <section id="detail-screen" class="screen">
+            <div class="immersive-header">
+                <img id="detail-image" src="" alt="Dish image">
+                <div class="header-overlay"></div>
+                <button class="back-btn-overlay" onclick="navigateTo('suggestions-screen')">←</button>
+            </div>
+            <div class="detail-content">
+                <h1 id="dish-name">Gourmet Grain Bowl</h1>
+                <p id="dish-description">A vibrant, nutrient-dense meal perfect for a quick healthy lunch.</p>
+                
+                <div class="detail-section">
+                    <h3>Ingredients</h3>
+                    <div class="ingredient-list" id="detail-ingredients">
+                        <!-- Ingredients tags -->
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Cooking Steps</h3>
+                    <div class="steps-timeline" id="cooking-steps">
+                        <!-- Step items -->
+                    </div>
+                </div>
+
+                <button class="primary-btn pulse-btn">Start Cooking Mode</button>
+            </div>
+        </section>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
