@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:platera_app/screens/customer_list_screen.dart';
+import 'package:platera_app/screens/sdui_customer_screen.dart';
 import 'theme/app_design.dart';
 import 'screens/signin_screen.dart';
 import 'data/service_locator.dart';
@@ -27,7 +29,9 @@ class _PlateraAppState extends State<PlateraApp> {
 
   void toggleTheme() {
     setState(() {
-      _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+      _themeMode = _themeMode == ThemeMode.dark
+          ? ThemeMode.light
+          : ThemeMode.dark;
     });
   }
 
@@ -42,10 +46,13 @@ class _PlateraAppState extends State<PlateraApp> {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0E1116),
         cardColor: const Color(0xFF1A1F26),
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme).apply(
-          bodyColor: const Color(0xFFB0B3B8),
-          displayColor: const Color(0xFFF0FDF4),
-        ),
+        textTheme:
+            GoogleFonts.plusJakartaSansTextTheme(
+              ThemeData.dark().textTheme,
+            ).apply(
+              bodyColor: const Color(0xFFB0B3B8),
+              displayColor: const Color(0xFFF0FDF4),
+            ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.accent,
           brightness: Brightness.dark,
@@ -56,16 +63,19 @@ class _PlateraAppState extends State<PlateraApp> {
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFFFFFFF),
         cardColor: Colors.white,
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme).apply(
-          bodyColor: const Color(0xFF4A4A4A),
-          displayColor: const Color(0xFF1A1C1E),
-        ),
+        textTheme:
+            GoogleFonts.plusJakartaSansTextTheme(
+              ThemeData.light().textTheme,
+            ).apply(
+              bodyColor: const Color(0xFF4A4A4A),
+              displayColor: const Color(0xFF1A1C1E),
+            ),
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.accent,
           brightness: Brightness.light,
         ),
       ),
-      home: const SigninScreen(),
+      home: SduiCustomerScreen(),
     );
   }
 }
