@@ -1,4 +1,4 @@
-package com.example.platera_app
+package com.ateequejamadar.platera
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -78,26 +78,35 @@ class _SigninScreenState extends State<SigninScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          image: DecorationImage(
-            image: AssetImage("assets/ready.png"),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.8),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 🔹 Background Image (Static)
+          Positioned.fill(
+            child: Image.asset(
+              "assets/ready.png",
+              fit: BoxFit.cover,
             ),
           ),
-          child: SafeArea(
+
+          // 🔹 Gradient Overlay (Static)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.8),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+
+          // 🔹 Scrollable Content
+          SafeArea(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(AppDesign.padding),
               child: Column(
@@ -152,10 +161,11 @@ class _SigninScreenState extends State<SigninScreen> {
                   const SizedBox(height: 40),
 
                   /// 🔹 Glassmorphism Card
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  RepaintBoundary(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
@@ -216,6 +226,7 @@ class _SigninScreenState extends State<SigninScreen> {
                       ),
                     ),
                   ),
+                ),
 
                   const SizedBox(height: 40),
 
@@ -304,7 +315,7 @@ class _SigninScreenState extends State<SigninScreen> {
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -384,28 +395,34 @@ class _GlassSocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return ClipRRect(
       borderRadius: BorderRadius.circular(AppDesign.borderRadiusMedium),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(AppDesign.borderRadiusMedium),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: AppDesign.bodyMedium(
-                context,
-              ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(AppDesign.borderRadiusMedium),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
-          ],
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  text,
+                  style: AppDesign.bodyMedium(
+                    context,
+                  ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

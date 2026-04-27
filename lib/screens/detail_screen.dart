@@ -228,9 +228,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                   "${(_details?.totalTime ?? 0) > 0 ? _details!.totalTime : ((_details?.preparationTime ?? 0) + (_details?.cookingTime ?? 0))} m",
                             ),
                             StatTile(
-                              title: "Calories",
-                              value:
-                                  "${_details?.caloriesPerServing ?? 0} kcal",
+                              title: "Cooking Time",
+                              value: _details?.cookingTime.toString() ?? "0",
                             ),
                           ],
                         ),
@@ -256,7 +255,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             entry,
                           ) {
                             int idx = entry.key + 1;
-                            String step = entry.value;
+                            RecipeStep step = entry.value;
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 16),
                               child: Row(
@@ -272,7 +271,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ),
                                   Expanded(
                                     child: Text(
-                                      step,
+                                      step.instruction,
                                       style: AppDesign.bodyMedium(
                                         context,
                                       ).copyWith(fontSize: 15, height: 1.6),

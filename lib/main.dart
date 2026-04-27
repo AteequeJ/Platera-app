@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:platera_app/screens/customer_list_screen.dart';
-import 'package:platera_app/screens/sdui_customer_screen.dart';
 import 'theme/app_design.dart';
 import 'screens/signin_screen.dart';
+import 'screens/home_screen.dart';
 import 'data/service_locator.dart';
 import 'data/api_client.dart';
 
@@ -11,11 +10,16 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ApiClient.init();
   locator.setup();
-  runApp(const PlateraApp());
+
+  final token = await locator.apiClient.getToken();
+  final bool isLoggedIn = token != null && token.isNotEmpty;
+
+  runApp(PlateraApp(isLoggedIn: isLoggedIn));
 }
 
 class PlateraApp extends StatefulWidget {
-  const PlateraApp({super.key});
+  final bool isLoggedIn;
+  const PlateraApp({super.key, required this.isLoggedIn});
 
   static _PlateraAppState of(BuildContext context) =>
       context.findAncestorStateOfType<_PlateraAppState>()!;
@@ -75,7 +79,7 @@ class _PlateraAppState extends State<PlateraApp> {
           brightness: Brightness.light,
         ),
       ),
-      home: SduiCustomerScreen(),
+      home: widget.isLoggedIn ? const HomeScreen() : const SigninScreen(),
     );
   }
 }

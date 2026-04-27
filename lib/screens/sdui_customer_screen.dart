@@ -17,55 +17,72 @@ class _CacheEntry {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-// UI schema cache — shared across instances, never re-fetched until TTL expires.
 _CacheEntry? _uiSchemaCache;
+
+/// Resets the UI schema cache (useful for tests).
+void clearUiSchemaCache() => _uiSchemaCache = null;
 
 /// Fetches the UI-only schema from /ui/screen/customer-list.
 /// Uses in-memory cache; TTL is read from meta.cachePolicy.ttl (default 300s).
-Future<Map<String, dynamic>> fetchScreenConfig() async {
-  if (_uiSchemaCache != null && _uiSchemaCache!.isValid) {
-    return _uiSchemaCache!.data;
+Future<Map<String, dynamic>> fetchScreenConfig({http.Client? client}) async {
+  final httpClient = client ?? http.Client();
+  try {
+    if (_uiSchemaCache != null && _uiSchemaCache!.isValid) {
+      return _uiSchemaCache!.data;
+    }
+    final response = await httpClient.get(
+      Uri.parse('$_baseUrl/ui/screen/customer-list'),
+      headers: {'Accept': 'application/json'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('UI schema error (${response.statusCode})');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final ttl =
+        ((data['meta']?['cachePolicy']?['ttl']) as num?)?.toInt() ?? 300;
+    _uiSchemaCache = _CacheEntry(data, DateTime.now().add(Duration(seconds: ttl)));
+    return data;
+  } finally {
+    if (client == null) httpClient.close();
   }
-  final response = await http.get(
-    Uri.parse('$_baseUrl/ui/screen/customer-list'),
-    headers: {'Accept': 'application/json'},
-  );
-  if (response.statusCode != 200) {
-    throw Exception('UI schema error (${response.statusCode})');
-  }
-  final data = jsonDecode(response.body) as Map<String, dynamic>;
-  final ttl =
-      ((data['meta']?['cachePolicy']?['ttl']) as num?)?.toInt() ?? 300;
-  _uiSchemaCache = _CacheEntry(data, DateTime.now().add(Duration(seconds: ttl)));
-  return data;
 }
 
 /// Fetches live customer data — never cached.
-Future<List<Map<String, dynamic>>> fetchCustomerData() async {
-  final response = await http.get(
-    Uri.parse('$_baseUrl/customers/data'),
-    headers: {'Accept': 'application/json'},
-  );
-  if (response.statusCode != 200) {
-    throw Exception('Customer data error (${response.statusCode})');
+Future<List<Map<String, dynamic>>> fetchCustomerData({http.Client? client}) async {
+  final httpClient = client ?? http.Client();
+  try {
+    final response = await httpClient.get(
+      Uri.parse('$_baseUrl/customers/data'),
+      headers: {'Accept': 'application/json'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Customer data error (${response.statusCode})');
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final list = (body['data'] as List<dynamic>?) ?? [];
+    return List<Map<String, dynamic>>.from(list);
+  } finally {
+    if (client == null) httpClient.close();
   }
-  final body = jsonDecode(response.body) as Map<String, dynamic>;
-  final list = (body['data'] as List<dynamic>?) ?? [];
-  return List<Map<String, dynamic>>.from(list);
 }
 
 /// POSTs an order update, then the caller re-fetches data only.
-Future<void> updateCustomerOrders(String id, String orders) async {
-  final response = await http.post(
-    Uri.parse('$_baseUrl/customers/update-orders'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: jsonEncode({'id': id, 'orders': orders}),
-  );
-  if (response.statusCode != 200) {
-    throw Exception('Update failed (${response.statusCode})');
+Future<void> updateCustomerOrders(String id, String orders, {http.Client? client}) async {
+  final httpClient = client ?? http.Client();
+  try {
+    final response = await httpClient.post(
+      Uri.parse('$_baseUrl/customers/update-orders'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({'id': id, 'orders': orders}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Update failed (${response.statusCode})');
+    }
+  } finally {
+    if (client == null) httpClient.close();
   }
 }
 
@@ -102,7 +119,8 @@ class SduiContext {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class SduiCustomerScreen extends StatefulWidget {
-  const SduiCustomerScreen({super.key});
+  final http.Client? client;
+  const SduiCustomerScreen({super.key, this.client});
 
   @override
   State<SduiCustomerScreen> createState() => _SduiCustomerScreenState();
@@ -128,8 +146,8 @@ class _SduiCustomerScreenState extends State<SduiCustomerScreen> {
     if (mounted) setState(() { _isLoading = true; _error = null; });
     try {
       final results = await Future.wait([
-        fetchScreenConfig(),
-        fetchCustomerData(),
+        fetchScreenConfig(client: widget.client),
+        fetchCustomerData(client: widget.client),
       ]);
       if (mounted) {
         setState(() {
@@ -149,7 +167,7 @@ class _SduiCustomerScreenState extends State<SduiCustomerScreen> {
   Future<void> _loadData() async {
     if (mounted) setState(() => _isDataRefreshing = true);
     try {
-      final data = await fetchCustomerData();
+      final data = await fetchCustomerData(client: widget.client);
       if (mounted) setState(() => _customers = data);
     } catch (e) {
       if (mounted) {
@@ -165,7 +183,7 @@ class _SduiCustomerScreenState extends State<SduiCustomerScreen> {
   // ── Update orders → re-fetch data only ───────────────────────────────────
 
   Future<void> _updateOrders(String id, String orders) async {
-    await updateCustomerOrders(id, orders);
+    await updateCustomerOrders(id, orders, client: widget.client);
     await _loadData(); // UI schema is not touched
   }
 
@@ -850,7 +868,6 @@ class SduiRenderer {
     Map<String, dynamic> node,
     Map<String, dynamic> data,
   ) {
-    final children = (node['children'] as List<dynamic>?) ?? [];
     final style = node['style'] as Map<String, dynamic>?;
     final padding = (node['padding'] as num?)?.toDouble() ?? 14;
     final marginBottom = (node['margin']?['bottom'] as num?)?.toDouble() ?? 12;
@@ -859,6 +876,22 @@ class SduiRenderer {
         ? _hexColor(_resolve(bgRaw, data))
         : Colors.white;
     final onClick = node['onClick'] as Map<String, dynamic>?;
+
+    final childNode = node['child'] as Map<String, dynamic>?;
+    final childrenRows = (node['children'] as List<dynamic>?) ?? [];
+
+    Widget cardBody;
+    if (childNode != null) {
+      cardBody = _renderWithData(ctx, childNode, data);
+    } else {
+      cardBody = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: childrenRows
+            .map((c) => _renderWithData(ctx, c as Map<String, dynamic>?, data))
+            .toList(),
+      );
+    }
 
     Widget card = Container(
       margin: EdgeInsets.only(bottom: marginBottom),
@@ -875,15 +908,7 @@ class SduiRenderer {
       ),
       child: Padding(
         padding: EdgeInsets.all(padding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: children
-              .map(
-                (c) => _renderWithData(ctx, c as Map<String, dynamic>?, data),
-              )
-              .toList(),
-        ),
+        child: cardBody,
       ),
     );
 

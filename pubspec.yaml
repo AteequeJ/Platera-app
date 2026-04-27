@@ -39,6 +39,7 @@ dependencies:
   dio: ^5.7.0
   shared_preferences: ^2.5.2
   flutter_native_splash: ^2.4.7
+  mocktail: ^1.0.5
 
 flutter_native_splash:
   color: "#000000"

@@ -152,7 +152,7 @@ class SuggestionModel {
   final String name;
   final String image;
   final List<String> missing;
-  final List<String> steps;
+  final List<RecipeStep> steps;
   final List<RecipeIngredient> ingredients;
   final int servings;
   final int preparationTime;
@@ -189,10 +189,8 @@ class SuggestionModel {
     return SuggestionModel(
       name: data['name'] ?? '',
       image: data['image'] ?? 'assets/ready.png',
-      missing: data['missing'] != null
-          ? List<String>.from(data['missing'])
-          : [],
-      steps: data['steps'] != null ? List<String>.from(data['steps']) : [],
+      missing: data['missing'] != null ? List<String>.from(data['missing']) : [],
+      steps: _parseSteps(data['steps']),
       ingredients: _parseIngredients(data['ingredients']),
       servings: data['servings'] ?? 1,
       preparationTime: data['preparation_time'] ?? 0,
@@ -204,6 +202,21 @@ class SuggestionModel {
       description: data['description'] ?? '',
       tips: data['tips'] != null ? List<String>.from(data['tips']) : [],
     );
+  }
+
+  static List<RecipeStep> _parseSteps(dynamic json) {
+    if (json == null) return [];
+    if (json is List) {
+      return json.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final item = entry.value;
+        if (item is Map<String, dynamic>) {
+          return RecipeStep.fromJson(item);
+        }
+        return RecipeStep(stepNumber: idx + 1, instruction: item.toString());
+      }).toList();
+    }
+    return [];
   }
 
   static List<RecipeIngredient> _parseIngredients(dynamic json) {

@@ -9,7 +9,11 @@ class AuthService {
   Future<AuthResponse> register(RegisterRequest request) async {
     try {
       final response = await _apiClient.dio.post('auth/register', data: request.toJson());
-      return AuthResponse.fromJson(response.data);
+      final authResponse = AuthResponse.fromJson(response.data);
+      if (authResponse.token != null) {
+        await _apiClient.setToken(authResponse.token!);
+      }
+      return authResponse;
     } catch (e) {
       rethrow;
     }

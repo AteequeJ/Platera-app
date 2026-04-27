@@ -7,6 +7,7 @@ import '../models/recipe_model.dart';
 import '../data/service_locator.dart';
 import 'detail_screen.dart';
 import 'inventory_screen.dart';
+import 'signin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,6 +52,36 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _handleLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await locator.authRepository.logout();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SigninScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final readyRecipes = _suggestions?.canMake ?? [];
@@ -75,11 +106,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          CircleAvatar(
-                            radius: 24,
-
-                            backgroundColor: AppColors.surfaceGrey,
-                            child: Icon(CupertinoIcons.person),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: _handleLogout,
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: AppColors.surfaceGrey,
+                                  child: Icon(
+                                    CupertinoIcons.person,
+                                    color: AppColors.textBody(context),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Hello Chef!",
+                                    style: AppDesign.bodySmall(context).copyWith(
+                                      color: AppColors.textBody(context)
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                  Text(
+                                    "Welcome back",
+                                    style: AppDesign.bodyMedium(context).copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                           GestureDetector(
                             onTap: () async {
