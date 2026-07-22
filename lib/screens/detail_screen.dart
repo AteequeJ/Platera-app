@@ -3,12 +3,19 @@ import '../theme/app_design.dart';
 import '../widgets/recipe_widgets.dart';
 import '../models/recipe_model.dart';
 import '../data/service_locator.dart';
+import 'cart_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final String name;
   final String image;
+  final List<String> missing;
 
-  const DetailScreen({super.key, required this.name, required this.image});
+  const DetailScreen({
+    super.key,
+    required this.name,
+    required this.image,
+    this.missing = const [],
+  });
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
@@ -18,6 +25,38 @@ class _DetailScreenState extends State<DetailScreen> {
   SuggestionModel? _details;
   bool _isLoading = true;
   String? _error;
+  bool _isAddingToCart = false;
+
+  Future<void> _buyMissing() async {
+    setState(() => _isAddingToCart = true);
+    try {
+      final result = await locator.cartRepository.addFromRecipe(widget.name, widget.missing);
+      if (!mounted) return;
+      final message = result.unmatched.isEmpty
+          ? "Added ${result.added.length} item(s) to your cart"
+          : "Added ${result.added.length} item(s). Couldn't find: ${result.unmatched.join(', ')}";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+            label: "View Cart",
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CartScreen()),
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Couldn't add missing items: ${e.toString()}")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAddingToCart = false);
+    }
+  }
 
   @override
   void initState() {
@@ -320,6 +359,31 @@ class _DetailScreenState extends State<DetailScreen> {
                             );
                           }).toList(),
                         ),
+                      // Nutrition Accordion
+                      if (_details?.nutrition != null)
+                        AccordionSection(
+                          title: "Nutrition",
+                          backgroundColor: AppColors.surfaceGreen.withOpacity(0.3),
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                StatTile(title: "Calories", value: "${_details!.nutrition!.calories}"),
+                                StatTile(title: "Protein", value: "${_details!.nutrition!.proteinG}g"),
+                                StatTile(title: "Carbs", value: "${_details!.nutrition!.carbsG}g"),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                StatTile(title: "Fat", value: "${_details!.nutrition!.fatG}g"),
+                                StatTile(title: "Fiber", value: "${_details!.nutrition!.fiberG}g"),
+                                const SizedBox(width: 60),
+                              ],
+                            ),
+                          ],
+                        ),
                       const SizedBox(height: 100), // Space for floating button
                     ],
                   ),
@@ -328,7 +392,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   bottom: 32,
                   left: AppDesign.padding,
                   right: AppDesign.padding,
-                  child: _StartCookingButton(),
+                  child: widget.missing.isNotEmpty
+                      ? _BuyMissingButton(
+                          count: widget.missing.length,
+                          isLoading: _isAddingToCart,
+                          onTap: _buyMissing,
+                        )
+                      : _StartCookingButton(),
                 ),
               ],
             ),
@@ -360,6 +430,58 @@ class _IngredientRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BuyMissingButton extends StatelessWidget {
+  final int count;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _BuyMissingButton({
+    required this.count,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          borderRadius: BorderRadius.circular(100),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Center(
+              child: isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    )
+                  : Text(
+                      "Buy missing ($count)",
+                      style: AppDesign.bodyMedium(context)
+                          .copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }

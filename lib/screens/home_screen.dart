@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../theme/app_design.dart';
 import '../widgets/recipe_widgets.dart';
+import '../widgets/recipe_filter_sheet.dart';
 import '../models/recipe_model.dart';
 import '../data/service_locator.dart';
 import 'detail_screen.dart';
 import 'inventory_screen.dart';
 import 'signin_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   AiSuggestionsResponse? _suggestions;
   bool _isLoading = true;
+  RecipeFilters _filters = const RecipeFilters();
 
   @override
   void initState() {
@@ -29,7 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
     try {
-      final results = await locator.recipeRepository.getSuggestedRecipes();
+      final results = await locator.recipeRepository.getSuggestedRecipes(
+        diet: _filters.diet,
+        cuisine: _filters.cuisine,
+        difficulty: _filters.difficulty,
+        maxTime: _filters.maxTime,
+        minCalories: _filters.minCalories,
+        maxCalories: _filters.maxCalories,
+      );
       setState(() {
         _suggestions = results;
       });
@@ -37,8 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         String errorMessage = e.toString();
         if (e is DioException) {
-          errorMessage =
-              e.response?.data?['message'] ?? e.message ?? e.toString();
+          // errorMessage =
+          //     e.response?.data?['message'] ?? e.message ?? e.toString();
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -49,6 +59,22 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _openFilterSheet() async {
+    final result = await showModalBottomSheet<RecipeFilters>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => RecipeFilterSheet(initial: _filters),
+    );
+    if (result != null) {
+      setState(() => _filters = result);
+      _fetchData();
     }
   }
 
@@ -125,77 +151,156 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   Text(
                                     "Hello Chef!",
-                                    style: AppDesign.bodySmall(context).copyWith(
-                                      color: AppColors.textBody(context)
-                                          .withOpacity(0.6),
-                                    ),
+                                    style: AppDesign.bodySmall(context)
+                                        .copyWith(
+                                          color: AppColors.textBody(
+                                            context,
+                                          ).withOpacity(0.6),
+                                        ),
                                   ),
                                   Text(
                                     "Welcome back",
-                                    style: AppDesign.bodyMedium(context).copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: AppDesign.bodyMedium(
+                                      context,
+                                    ).copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          GestureDetector(
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const InventoryScreen(),
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const CartScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceGrey,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    CupertinoIcons.cart,
+                                    color: AppColors.textBody(context),
+                                  ),
                                 ),
-                              );
-                              _fetchData(); // Refresh data after returning
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.accent,
-                                shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                CupertinoIcons.bag,
-                                color: AppColors.primary,
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const InventoryScreen(),
+                                    ),
+                                  );
+                                  _fetchData(); // Refresh data after returning
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.bag,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
                       const SizedBox(height: 32),
 
-                      // Search Bar
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceGrey,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search,
-                              color: AppColors.textBody(
-                                context,
-                              ).withOpacity(0.4),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              "Search recipes",
-                              style: AppDesign.bodyMedium(context).copyWith(
-                                color: AppColors.textBody(
-                                  context,
-                                ).withOpacity(0.5),
-                                fontWeight: FontWeight.w400,
+                      // Search Bar + Filter
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceGrey,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.search,
+                                    color: AppColors.textBody(
+                                      context,
+                                    ).withOpacity(0.4),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Search recipes",
+                                    style: AppDesign.bodyMedium(context).copyWith(
+                                      color: AppColors.textBody(
+                                        context,
+                                      ).withOpacity(0.5),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: _openFilterSheet,
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: _filters.isEmpty ? AppColors.surfaceGrey : AppColors.accent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    Icons.tune,
+                                    size: 20,
+                                    color: _filters.isEmpty
+                                        ? AppColors.textBody(context)
+                                        : AppColors.primary,
+                                  ),
+                                  if (!_filters.isEmpty)
+                                    Positioned(
+                                      top: -6,
+                                      right: -6,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                        child: Text(
+                                          "${_filters.activeCount}",
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 48),
 
@@ -278,8 +383,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            DetailScreen(name: recipe.name, image: recipe.image),
+        builder: (context) => DetailScreen(
+          name: recipe.name,
+          image: recipe.image,
+          missing: recipe.missing,
+        ),
       ),
     );
   }

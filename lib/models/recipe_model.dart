@@ -1,6 +1,65 @@
 import 'dart:convert';
 import 'ingredient.dart';
 
+class RecipeFilters {
+  final String? diet;
+  final String? cuisine;
+  final String? difficulty;
+  final int? maxTime;
+  final int? minCalories;
+  final int? maxCalories;
+
+  const RecipeFilters({
+    this.diet,
+    this.cuisine,
+    this.difficulty,
+    this.maxTime,
+    this.minCalories,
+    this.maxCalories,
+  });
+
+  bool get isEmpty =>
+      diet == null &&
+      cuisine == null &&
+      difficulty == null &&
+      maxTime == null &&
+      minCalories == null &&
+      maxCalories == null;
+
+  int get activeCount => [
+        diet,
+        cuisine,
+        difficulty,
+        maxTime,
+        minCalories,
+        maxCalories,
+      ].where((v) => v != null).length;
+
+  RecipeFilters copyWith({
+    String? diet,
+    bool clearDiet = false,
+    String? cuisine,
+    bool clearCuisine = false,
+    String? difficulty,
+    bool clearDifficulty = false,
+    int? maxTime,
+    bool clearMaxTime = false,
+    int? minCalories,
+    bool clearMinCalories = false,
+    int? maxCalories,
+    bool clearMaxCalories = false,
+  }) {
+    return RecipeFilters(
+      diet: clearDiet ? null : (diet ?? this.diet),
+      cuisine: clearCuisine ? null : (cuisine ?? this.cuisine),
+      difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
+      maxTime: clearMaxTime ? null : (maxTime ?? this.maxTime),
+      minCalories: clearMinCalories ? null : (minCalories ?? this.minCalories),
+      maxCalories: clearMaxCalories ? null : (maxCalories ?? this.maxCalories),
+    );
+  }
+}
+
 class RecipeIngredient {
   final String item;
   final String quantity; // stored as string to preserve fractions like "1/2"
@@ -148,6 +207,32 @@ class Recipe {
   }
 }
 
+class NutritionInfo {
+  final int calories;
+  final int proteinG;
+  final int carbsG;
+  final int fatG;
+  final int fiberG;
+
+  NutritionInfo({
+    this.calories = 0,
+    this.proteinG = 0,
+    this.carbsG = 0,
+    this.fatG = 0,
+    this.fiberG = 0,
+  });
+
+  factory NutritionInfo.fromJson(Map<String, dynamic> json) {
+    return NutritionInfo(
+      calories: json['calories'] ?? 0,
+      proteinG: json['protein_g'] ?? 0,
+      carbsG: json['carbs_g'] ?? 0,
+      fatG: json['fat_g'] ?? 0,
+      fiberG: json['fiber_g'] ?? 0,
+    );
+  }
+}
+
 class SuggestionModel {
   final String name;
   final String image;
@@ -160,9 +245,11 @@ class SuggestionModel {
   final int totalTime;
   final String difficulty;
   final String cuisine;
+  final String dietType;
   final int caloriesPerServing;
   final String description;
   final List<String> tips;
+  final NutritionInfo? nutrition;
 
   SuggestionModel({
     required this.name,
@@ -176,9 +263,11 @@ class SuggestionModel {
     this.totalTime = 0,
     this.difficulty = 'medium',
     this.cuisine = '',
+    this.dietType = '',
     this.caloriesPerServing = 0,
     this.description = '',
     this.tips = const [],
+    this.nutrition,
   });
 
   factory SuggestionModel.fromJson(Map<String, dynamic> json) {
@@ -198,9 +287,14 @@ class SuggestionModel {
       totalTime: data['total_time'] ?? 0,
       difficulty: data['difficulty'] ?? 'medium',
       cuisine: data['cuisine'] ?? '',
-      caloriesPerServing: data['calories_per_serving'] ?? 0,
+      dietType: data['diet_type'] ?? '',
+      // ai-suggestions dish objects use `calories`; get-recipe-details uses `calories_per_serving`
+      caloriesPerServing: data['calories_per_serving'] ?? data['calories'] ?? 0,
       description: data['description'] ?? '',
       tips: data['tips'] != null ? List<String>.from(data['tips']) : [],
+      nutrition: data['nutrition'] != null
+          ? NutritionInfo.fromJson(data['nutrition'])
+          : null,
     );
   }
 

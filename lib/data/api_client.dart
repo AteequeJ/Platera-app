@@ -7,9 +7,10 @@ import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 class ApiClient {
   // Use 10.0.2.2 for Android Emulator to access localhost on host machine
   static String get baseUrl {
-    if (kIsWeb) return 'https://platera-backend.onrender.com/api/';
-    if (Platform.isAndroid && kDebugMode) return 'http://10.0.2.2:3000/api/';
-    return 'https://platera-backend.onrender.com/api/';
+    // if (kIsWeb) return 'https://platera-backend.onrender.com/api/';
+    // if (Platform.isAndroid && kDebugMode) return 'http://10.0.2.2:3000/api/';
+    // return 'https://platera-backend.onrender.com/api/';
+    return 'http://localhost:3000/api/';
   }
 
   late Dio dio;

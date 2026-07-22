@@ -136,7 +136,11 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DetailScreen(name: recipe.name, image: recipe.image),
+        builder: (context) => DetailScreen(
+          name: recipe.name,
+          image: recipe.image,
+          missing: recipe.missing,
+        ),
       ),
     );
   }
